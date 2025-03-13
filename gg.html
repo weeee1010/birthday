@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生日祝福</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #ffe6f2; /* 初始淡粉色 */
+            color: #d63384; /* 玫红色文字 */
+            text-align: center;
+            font-family: "Arial", sans-serif;
+            transition: background 2s ease-in-out;
+        }
+
+        .container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .fade-in {
+            opacity: 0;
+            font-size: 3em; /* 字体更大 */
+            font-weight: bold;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        input {
+            font-size: 1.5em;
+            padding: 10px;
+            margin: 10px;
+            border: 2px solid #d63384;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        button {
+            font-size: 1.5em;
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #d63384;
+            border: none;
+            color: white;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #b52d6e;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 密码输入界面 -->
+    <div id="passwordScreen" class="container">
+        <h1>请输入密码</h1>
+        <input type="password" id="passwordInput" placeholder="输入密码">
+        <button onclick="checkPassword()">进入</button>
+    </div>
+
+    <!-- 祝福界面 -->
+    <div id="birthdayScreen" class="container hidden" onclick="showNext()">
+        <p id="step1" class="fade-in">今天是农历十五</p>
+        <p id="step2" class="fade-in hidden">祝亲爱的母亲</p>
+        <p id="step3" class="fade-in hidden">生日快乐</p>
+        <p id="step4" class="fade-in hidden">岁月是一首长诗，愿您的每一天都写满温暖与微笑。</p>
+    </div>
+
+    <!-- 烟花特效 -->
+    <canvas id="fireworks"></canvas>
+
+    <!-- 背景音乐 -->
+    <audio id="bgMusic" autoplay loop>
+        <source src="your-music.mp3" type="audio/mpeg">
+        您的浏览器不支持音频播放。
+    </audio>
+
+    <script>
+        const canvas = document.getElementById("fireworks");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let fireworks = [];
+        let clickCount = 0;
+        let currentStep = 1;
+        let inFinalFireworks = false;
+
+        class Particle {
+            constructor(x, y, color, size, speedFactor) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.size = size;
+                this.speedX = (Math.random() - 0.5) * 10 * speedFactor;
+                this.speedY = (Math.random() - 0.5) * 10 * speedFactor;
+                this.alpha = 1;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.alpha -= 0.015;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function createFirework(amount, sizeFactor = 1, speedFactor = 1) {
+            let x = Math.random() * canvas.width;
+            let y = Math.random() * canvas.height / 2;
+            let color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+            for (let i = 0; i < amount; i++) {
+                fireworks.push(new Particle(x, y, color, Math.random() * 5 * sizeFactor + 2, speedFactor));
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            fireworks.forEach((p, i) => {
+                p.update();
+                p.draw();
+                if (p.alpha <= 0) {
+                    fireworks.splice(i, 1);
+                }
+            });
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        function showNext() {
+            if (inFinalFireworks) return;
+
+            if (currentStep > 4) {
+                startFinalFireworks();
+                return;
+            }
+
+            let currentElement = document.getElementById(`step${currentStep}`);
+            currentElement.classList.remove("hidden");
+            setTimeout(() => {
+                currentElement.style.opacity = "1";
+            }, 100);
+
+            currentStep++;
+            createFirework(50 + clickCount * 20);
+            clickCount++;
+        }
+
+        function startFinalFireworks() {
+            inFinalFireworks = true;
+            document.body.style.background = "#000";
+
+            function massiveFireworks() {
+                createFirework(200, 3, 2);
+                if (inFinalFireworks) {
+                    setTimeout(massiveFireworks, 500);
+                }
+            }
+
+            massiveFireworks();
+
+            setTimeout(() => {
+                inFinalFireworks = false;
+                document.body.style.transition = "opacity 5s";
+                document.body.style.opacity = "0";
+            }, 30000);
+        }
+
+        window.addEventListener("resize", () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        function checkPassword() {
+            let input = document.getElementById("passwordInput").value;
+            if (input === "2025") {
+                document.getElementById("passwordScreen").classList.add("hidden");
+                document.getElementById("birthdayScreen").classList.remove("hidden");
+                createFirework(100);
+                document.getElementById("bgMusic").play();
+            } else {
+                alert("密码错误，请重试！");
+            }
+        }
+
+        document.getElementById("passwordInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                checkPassword();
+            }
+        });
+    </script>
+
+</body>
+</html>
